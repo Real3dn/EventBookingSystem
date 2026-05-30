@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import { api } from '../context/AuthContext';
 import { format } from 'date-fns';
 import { FaCalendarAlt, FaMapMarkerAlt, FaUsers, FaSearch, FaFilter } from 'react-icons/fa';
 
@@ -10,6 +10,7 @@ const Events = () => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [categories, setCategories] = useState([]);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchEvents();
@@ -17,18 +18,29 @@ const Events = () => {
 
   const fetchEvents = async () => {
     try {
+      setLoading(true);
+      setError(null);
+      
       const params = {};
       if (search) params.search = search;
       if (category) params.category = category;
       
-      const response = await axios.get('/events', { params });
-      setEvents(response.data.events);
+      const response = await api.get('/events', { params });
+      
+      // Ensure we're working with an array
+      const eventsData = response.data?.events || [];
+      setEvents(Array.isArray(eventsData) ? eventsData : []);
       
       // Extract unique categories
-      const uniqueCategories = [...new Set(response.data.events.map(event => event.category))];
-      setCategories(uniqueCategories);
+      if (Array.isArray(eventsData)) {
+        const uniqueCategories = [...new Set(eventsData.map(event => event.category).filter(Boolean))];
+        setCategories(uniqueCategories);
+      }
     } catch (error) {
       console.error('Error fetching events:', error);
+      setError('Failed to load events. Please try again later.');
+      setEvents([]);
+      setCategories([]);
     } finally {
       setLoading(false);
     }
@@ -79,6 +91,18 @@ const Events = () => {
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
           </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <FaCalendarAlt className="text-6xl text-gray-300 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-600 mb-2">Error Loading Events</h3>
+            <p className="text-gray-500 mb-4">{error}</p>
+            <button
+              onClick={fetchEvents}
+              className="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
         ) : events.length === 0 ? (
           <div className="text-center py-12">
             <FaCalendarAlt className="text-6xl text-gray-300 mx-auto mb-4" />
@@ -99,41 +123,48 @@ const Events = () => {
                       src={`http://localhost:5000${event.image_url}`}
                       alt={event.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.parentElement.classList.add('flex', 'items-center', 'justify-center');
+                      }}
                     />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <FaCalendarAlt className="text-white text-6xl" />
-                    </div>
-                  )}
+                  ) : null}
                   <div className="absolute top-4 right-4 bg-white text-indigo-600 px-3 py-1 rounded-full text-sm font-semibold">
-                    {event.category}
+                    {event.category || 'General'}
                   </div>
                 </div>
                 <div className="p-6">
                   <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors">
                     {event.title}
                   </h3>
-                  <p className="text-gray-600 mb-4 line-clamp-2">{event.description}</p>
+                  <p className="text-gray-600 mb-4 line-clamp-2">{event.description || 'No description available'}</p>
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center text-gray-600">
                       <FaCalendarAlt className="mr-2 text-indigo-500" />
-                      <span>{format(new Date(event.date), 'MMM dd, yyyy HH:mm')}</span>
+                      <span>{event.date ? format(new Date(event.date), 'MMM dd, yyyy HH:mm') : 'Date TBA'}</span>
                     </div>
                     <div className="flex items-center text-gray-600">
                       <FaMapMarkerAlt className="mr-2 text-indigo-500" />
-                      <span>{event.location}</span>
+                      <span>{event.location || 'Location TBA'}</span>
                     </div>
                     <div className="flex items-center text-gray-600">
                       <FaUsers className="mr-2 text-indigo-500" />
-                      <span>{event.available_spots} spots left</span>
+                      <span>{event.available_spots != null ? `${event.available_spots} spots left` : 'Capacity TBA'}</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-2xl font-bold text-indigo-600">
-                      ${event.price}
+                      ${event.price != null ? event.price : '0'}
                     </span>
-                    <span className={`text-sm font-medium ${event.available_spots < 10 ? 'text-red-500' : 'text-green-500'}`}>
-                      {event.available_spots < 10 ? 'Almost full!' : 'Available'}
+                    <span className={`text-sm font-medium ${
+                      event.available_spots != null && event.available_spots < 10 
+                        ? 'text-red-500' 
+                        : 'text-green-500'
+                    }`}>
+                      {event.available_spots != null 
+                        ? (event.available_spots < 10 ? 'Almost full!' : 'Available')
+                        : 'Check availability'
+                      }
                     </span>
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import {api} from '../context/AuthContext.jsx'
 import { format } from 'date-fns';
 import { FaCalendarAlt, FaTicketAlt, FaMapMarkerAlt } from 'react-icons/fa';
 
@@ -14,7 +15,7 @@ const MyBookings = () => {
 
   const fetchBookings = async () => {
     try {
-      const response = await axios.get('/bookings');
+      const response = await api.get('/bookings');
       setBookings(response.data.bookings);
     } catch (error) {
       console.error('Error fetching bookings:', error);
@@ -30,6 +31,7 @@ const MyBookings = () => {
       </div>
     );
   }
+  console.log(bookings)
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">

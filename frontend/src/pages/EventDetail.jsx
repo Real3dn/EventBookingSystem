@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { api } from '../context/AuthContext';
 import { format } from 'date-fns';
-import { FaCalendarAlt, FaMapMarkerAlt, FaUsers, FaDollarSign, FaClock } from 'react-icons/fa';
+import { FaCalendarAlt, FaMapMarkerAlt, FaUsers, FaClock } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 
@@ -20,7 +20,7 @@ const EventDetail = () => {
 
   const fetchEvent = async () => {
     try {
-      const response = await axios.get(`/events/${id}`);
+      const response = await api.get(`/events/${id}`);
       setEvent(response.data.event);
     } catch (error) {
       console.error('Error fetching event:', error);
@@ -32,13 +32,13 @@ const EventDetail = () => {
 
   const handleBooking = async () => {
     if (!user) {
-      navigate('/login');
+      navigate('/login', { state: { from: { pathname: `/events/${id}` } } });
       return;
     }
 
     setBooking(true);
     try {
-      await axios.post('/bookings', {
+      await api.post('/bookings', {
         event_id: event.id,
         quantity: 1
       });
@@ -187,7 +187,7 @@ const EventDetail = () => {
                     {!user && (
                       <p className="text-sm text-gray-500 text-center">
                         <button
-                          onClick={() => navigate('/login')}
+                          onClick={() => navigate('/login', { state: { from: { pathname: `/events/${id}` } } })}
                           className="text-indigo-600 hover:text-indigo-500 font-medium"
                         >
                           Sign in
