@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../context/AuthContext';
 import { format } from 'date-fns';
-import { FaCalendarAlt, FaMapMarkerAlt, FaUsers, FaClock } from 'react-icons/fa';
+import { FaCalendarAlt, FaMapMarkerAlt, FaUsers, FaClock,FaEdit } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
+
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -152,6 +154,13 @@ const EventDetail = () => {
                     <span className="text-4xl font-bold text-indigo-600">${event.price}</span>
                     <span className="text-gray-600 ml-2">per ticket</span>
                   </div>
+              <Link
+                to={`/events/${event.id}/edit`}
+                className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                title="Edit Event"
+              >
+                <FaEdit className="text-xl" />
+              </Link>
 
                   <div className="space-y-4">
                     <div className="bg-white p-4 rounded-md">

@@ -46,20 +46,20 @@ class Event(db.Model):
     
     def to_dict(self):
         return {
-            'id': self.id,
-            'title': self.title,
-            'description': self.description,
-            'date': self.date.isoformat() if self.date else None,
-            'location': self.location,
-            'price': self.price,
-            'capacity': self.capacity,
-            'category': self.category,
-            'image_url': self.image_url,
-            'organizer_id': self.organizer_id,
-            'organizer_name': self.organizer.name if self.organizer else None,
-            'available_spots': self.capacity - len(self.bookings),
-            'created_at': self.created_at.isoformat() if self.created_at else None
-        }
+        'id': self.id,
+        'title': self.title,
+        'description': self.description,
+        'date': self.date.isoformat() if self.date else None,
+        'location': self.location,
+        'price': self.price,
+        'capacity': self.capacity,
+        'category': self.category,
+        'image_url': self.image_url,
+        'organizer_id': self.organizer_id,
+        'organizer_name': self.organizer.name if self.organizer else None,
+        'available_spots': self.capacity - len(self.bookings),
+        'created_at': self.created_at.isoformat() if self.created_at else None
+    }
     
 
 

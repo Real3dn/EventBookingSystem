@@ -325,10 +325,20 @@ def update_event(event_id):
         if 'category' in data and data['category']:
             event.category = data['category']
         
-        # Handle image upload
+        # Handle remove_image flag
+        if data.get('remove_image') == 'true':
+            # Delete old image if exists
+            if event.image_url:
+                old_file = os.path.join(app.config['UPLOAD_FOLDER'], os.path.basename(event.image_url))
+                if os.path.exists(old_file):
+                    os.remove(old_file)
+                event.image_url = None
+        
+        # Handle new image upload
         if 'image' in request.files:
             file = request.files['image']
             if file and file.filename and allowed_file(file.filename):
+                # Delete old image if exists
                 if event.image_url:
                     old_file = os.path.join(app.config['UPLOAD_FOLDER'], os.path.basename(event.image_url))
                     if os.path.exists(old_file):
@@ -349,7 +359,6 @@ def update_event(event_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 422
-
 @app.route('/api/events/<int:event_id>', methods=['DELETE'])
 @jwt_required()
 def delete_event(event_id):
