@@ -12,8 +12,15 @@ import uuid
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}})
 
+# Configure CORS properly - allow all origins for development
+CORS(app, 
+     origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+     supports_credentials=True,
+     allow_headers=["Content-Type", "Authorization"],
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+
+# Rest of your configuration...
 # Configuration
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-change-this')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///events.db'
@@ -36,6 +43,21 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Helper function to get current user from JWT
+def get_current_user():
+    """Get the current user from JWT token"""
+    try:
+        user_id = get_jwt_identity()
+        # Convert string ID to integer if needed
+        if isinstance(user_id, str):
+            user_id = int(user_id)
+        
+        user = User.query.get(user_id)
+        return user
+    except Exception as e:
+        print(f"Error getting current user: {str(e)}")
+        return None
 
 # Create database tables
 with app.app_context():
@@ -124,19 +146,12 @@ def login():
 
 @app.route('/api/auth/me', methods=['GET'])
 @jwt_required()
-def get_current_user():
-    try:
-        # get_jwt_identity returns a string, convert to int
-        user_id = int(get_jwt_identity())
-        user = User.query.get(user_id)
-        
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-        
-        return jsonify({'user': user.to_dict()}), 200
-    except Exception as e:
-        print(f"Error in /api/auth/me: {str(e)}")
-        return jsonify({'error': 'Authentication failed'}), 422
+def get_current_user_info():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    return jsonify({'user': user.to_dict()}), 200
 
 # Event Routes
 @app.route('/api/events', methods=['GET'])
@@ -175,17 +190,25 @@ def get_event(event_id):
     
     return jsonify({'event': event.to_dict()}), 200
 
+@app.route('/api/my-events', methods=['GET'])
+@jwt_required()
+def get_my_events():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    events = Event.query.filter_by(organizer_id=user.id).order_by(Event.date.desc()).all()
+    
+    return jsonify({'events': [event.to_dict() for event in events]}), 200
+
 @app.route('/api/events', methods=['POST'])
 @jwt_required()
 def create_event():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
     try:
-        # get_jwt_identity returns a string, convert to int
-        user_id = int(get_jwt_identity())
-        user = User.query.get(user_id)
-        
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-        
         # Get form data or JSON data
         if request.content_type and 'multipart/form-data' in request.content_type:
             data = request.form.to_dict()
@@ -208,16 +231,12 @@ def create_event():
         
         # Parse date
         try:
-            # Handle different date formats
             if 'T' in date_str:
                 event_date = datetime.fromisoformat(date_str)
             else:
                 event_date = datetime.strptime(date_str, '%Y-%m-%d')
         except ValueError as e:
-            return jsonify({
-                'error': f'Invalid date format: {str(e)}',
-                'expected': 'YYYY-MM-DDTHH:MM or YYYY-MM-DD'
-            }), 400
+            return jsonify({'error': f'Invalid date format: {str(e)}'}), 400
         
         # Handle image upload
         image_url = None
@@ -229,22 +248,16 @@ def create_event():
                 file.save(filepath)
                 image_url = f"/uploads/{filename}"
         
-        # Create event with safe defaults
-        price = float(data.get('price', 0)) if data.get('price') else 0
-        capacity = int(data.get('capacity', 100)) if data.get('capacity') else 100
-        category = data.get('category', 'General')
-        description = data.get('description', '')
-        
         event = Event(
             title=title.strip(),
-            description=description,
+            description=data.get('description', ''),
             date=event_date,
             location=location.strip(),
-            price=price,
-            capacity=capacity,
-            category=category,
+            price=float(data.get('price', 0) or 0),
+            capacity=int(data.get('capacity', 100) or 100),
+            category=data.get('category', 'General'),
             image_url=image_url,
-            organizer_id=user_id
+            organizer_id=user.id
         )
         
         db.session.add(event)
@@ -258,24 +271,23 @@ def create_event():
     except Exception as e:
         db.session.rollback()
         print(f"Error creating event: {str(e)}")
-        import traceback
-        traceback.print_exc()
         return jsonify({'error': f'Failed to create event: {str(e)}'}), 422
 
-# Similar update for other routes that use @jwt_required()
 @app.route('/api/events/<int:event_id>', methods=['PUT'])
 @jwt_required()
 def update_event(event_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    event = Event.query.get(event_id)
+    if not event:
+        return jsonify({'error': 'Event not found'}), 404
+    
+    if event.organizer_id != user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
     try:
-        user_id = int(get_jwt_identity())
-        event = Event.query.get(event_id)
-        
-        if not event:
-            return jsonify({'error': 'Event not found'}), 404
-        
-        if event.organizer_id != user_id:
-            return jsonify({'error': 'Unauthorized'}), 403
-        
         # Get form data or JSON data
         if request.content_type and 'multipart/form-data' in request.content_type:
             data = request.form.to_dict()
@@ -296,8 +308,8 @@ def update_event(event_id):
                     event.date = datetime.fromisoformat(data['date'])
                 else:
                     event.date = datetime.strptime(data['date'], '%Y-%m-%d')
-            except ValueError as e:
-                return jsonify({'error': f'Invalid date format: {str(e)}'}), 400
+            except ValueError:
+                return jsonify({'error': 'Invalid date format'}), 400
         if 'location' in data and data['location']:
             event.location = data['location'].strip()
         if 'price' in data:
@@ -317,7 +329,6 @@ def update_event(event_id):
         if 'image' in request.files:
             file = request.files['image']
             if file and file.filename and allowed_file(file.filename):
-                # Delete old image if exists
                 if event.image_url:
                     old_file = os.path.join(app.config['UPLOAD_FOLDER'], os.path.basename(event.image_url))
                     if os.path.exists(old_file):
@@ -337,24 +348,23 @@ def update_event(event_id):
         
     except Exception as e:
         db.session.rollback()
-        print(f"Error updating event: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': f'Failed to update event: {str(e)}'}), 422
+        return jsonify({'error': str(e)}), 422
 
 @app.route('/api/events/<int:event_id>', methods=['DELETE'])
 @jwt_required()
 def delete_event(event_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    event = Event.query.get(event_id)
+    if not event:
+        return jsonify({'error': 'Event not found'}), 404
+    
+    if event.organizer_id != user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
     try:
-        user_id = int(get_jwt_identity())
-        event = Event.query.get(event_id)
-        
-        if not event:
-            return jsonify({'error': 'Event not found'}), 404
-        
-        if event.organizer_id != user_id:
-            return jsonify({'error': 'Unauthorized'}), 403
-        
         # Delete image file if exists
         if event.image_url:
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], os.path.basename(event.image_url))
@@ -373,76 +383,71 @@ def delete_event(event_id):
 @app.route('/api/bookings', methods=['POST'])
 @jwt_required()
 def create_booking():
-    try:
-        user_id = int(get_jwt_identity())
-        data = request.get_json()
-        
-        if not data or not data.get('event_id'):
-            return jsonify({'error': 'Event ID is required'}), 400
-        
-        event = Event.query.get(data['event_id'])
-        if not event:
-            return jsonify({'error': 'Event not found'}), 404
-        
-        # Check if event has available spots
-        current_bookings = Booking.query.filter_by(event_id=event.id).count()
-        if current_bookings >= event.capacity:
-            return jsonify({'error': 'Event is fully booked'}), 400
-        
-        # Check if user already booked
-        existing_booking = Booking.query.filter_by(
-            user_id=user_id,
-            event_id=event.id
-        ).first()
-        
-        if existing_booking:
-            return jsonify({'error': 'You have already booked this event'}), 400
-        
-        quantity = data.get('quantity', 1)
-        
-        booking = Booking(
-            user_id=user_id,
-            event_id=event.id,
-            quantity=quantity,
-            total_amount=event.price * quantity
-        )
-        
-        db.session.add(booking)
-        db.session.commit()
-        
-        return jsonify({
-            'message': 'Booking created successfully',
-            'booking': booking.to_dict()
-        }), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 422
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    data = request.get_json()
+    
+    if not data or not data.get('event_id'):
+        return jsonify({'error': 'Event ID is required'}), 400
+    
+    event = Event.query.get(data['event_id'])
+    if not event:
+        return jsonify({'error': 'Event not found'}), 404
+    
+    # Check if event has available spots
+    current_bookings = Booking.query.filter_by(event_id=event.id).count()
+    if current_bookings >= event.capacity:
+        return jsonify({'error': 'Event is fully booked'}), 400
+    
+    # Check if user already booked
+    existing_booking = Booking.query.filter_by(
+        user_id=user.id,
+        event_id=event.id
+    ).first()
+    
+    if existing_booking:
+        return jsonify({'error': 'You have already booked this event'}), 400
+    
+    quantity = data.get('quantity', 1)
+    
+    booking = Booking(
+        user_id=user.id,
+        event_id=event.id,
+        quantity=quantity,
+        total_amount=event.price * quantity
+    )
+    
+    db.session.add(booking)
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Booking created successfully',
+        'booking': booking.to_dict()
+    }), 201
 
 @app.route('/api/bookings', methods=['GET'])
 @jwt_required()
 def get_user_bookings():
-    try:
-        user_id = int(get_jwt_identity())
-        bookings = Booking.query.filter_by(user_id=user_id).order_by(Booking.created_at.desc()).all()
-        
-        return jsonify({'bookings': [booking.to_dict() for booking in bookings]}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 422
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    bookings = Booking.query.filter_by(user_id=user.id).order_by(Booking.created_at.desc()).all()
+    
+    return jsonify({'bookings': [booking.to_dict() for booking in bookings]}), 200
 
 # Debug endpoint
 @app.route('/api/debug/token', methods=['GET'])
 @jwt_required()
 def debug_token():
-    try:
-        user_id = int(get_jwt_identity())
-        user = User.query.get(user_id)
-        return jsonify({
-            'user_id': user_id,
-            'user_exists': user is not None,
-            'user': user.to_dict() if user else None
-        }), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 422
+    user = get_current_user()
+    return jsonify({
+        'user_id': user.id if user else None,
+        'user_exists': user is not None,
+        'user': user.to_dict() if user else None
+    }), 200
 
 # Serve uploaded files
 @app.route('/uploads/<filename>')

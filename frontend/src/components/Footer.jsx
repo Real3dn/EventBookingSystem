@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaCalendarAlt, FaGithub, FaTwitter, FaLinkedin } from 'react-icons/fa';
+import { FaCalendarAlt, FaGithub, FaSchool, FaLinkedin } from 'react-icons/fa';
 
 const Footer = () => {
   return (
@@ -21,10 +21,10 @@ const Footer = () => {
               <a href="https://www.github.com/Real3dn/" className="text-gray-400 hover:text-indigo-400 transition-colors">
                 <FaGithub className="h-6 w-6" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-indigo-400 transition-colors">
-                <FaTwitter className="h-6 w-6" />
+              <a href="https://www.github.com/Real3dn/" className="text-gray-400 hover:text-indigo-400 transition-colors">
+                <FaSchool className="h-6 w-6" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-indigo-400 transition-colors">
+              <a href="https://www.github.com/Real3dn/" className="text-gray-400 hover:text-indigo-400 transition-colors">
                 <FaLinkedin className="h-6 w-6" />
               </a>
             </div>
@@ -57,8 +57,8 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-4">Contact</h3>
             <ul className="space-y-2 text-gray-400">
               <li>support@eventhub.com</li>
-              <li>+1 (555) 123-4567</li>
-              <li>Iraq, Iraq</li>
+              <li>+(964) 770 123 4567 </li>
+              <li>Iraq</li>
             </ul>
           </div>
         </div>

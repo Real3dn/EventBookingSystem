@@ -42,14 +42,14 @@ class Event(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
-    bookings = db.relationship('Booking', backref='event', lazy=True)
+    bookings = db.relationship('Booking', backref='event', lazy=True, cascade='all, delete-orphan')
     
     def to_dict(self):
         return {
             'id': self.id,
             'title': self.title,
             'description': self.description,
-            'date': self.date.isoformat(),
+            'date': self.date.isoformat() if self.date else None,
             'location': self.location,
             'price': self.price,
             'capacity': self.capacity,
@@ -58,8 +58,10 @@ class Event(db.Model):
             'organizer_id': self.organizer_id,
             'organizer_name': self.organizer.name if self.organizer else None,
             'available_spots': self.capacity - len(self.bookings),
-            'created_at': self.created_at.isoformat()
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }
+    
+
 
 class Booking(db.Model):
     __tablename__ = 'bookings'
@@ -78,8 +80,9 @@ class Booking(db.Model):
             'user_id': self.user_id,
             'event_id': self.event_id,
             'event_title': self.event.title if self.event else None,
+            'event_date': self.event.date.isoformat() if self.event and self.event.date else None,
             'quantity': self.quantity,
             'total_amount': self.total_amount,
             'status': self.status,
-            'created_at': self.created_at.isoformat()
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }
