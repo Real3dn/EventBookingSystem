@@ -1,11 +1,10 @@
-### `README.md`
 
-```markdown
+markdown
 # 🎉 EventHub - Full-Stack Event Booking Platform
 
 A modern, full-stack event booking platform built with React + Vite (Frontend) and Flask (Backend). This application allows users to discover, browse, and book events while providing event organizers with powerful tools to create and manage their events.
 
-![EventHub Banner](https://via.placeholder.com/1200x400/6366f1/ffffff?text=EventHub+-+Event+Booking+Platform)
+Preview (Frontend only): https://real3dneventbooking.netlify.app/
 
 ## ✨ Features
 
