@@ -5,6 +5,7 @@ A modern, full-stack event booking platform built with React + Vite (Frontend) a
 Preview (Frontend only): https://real3dneventbooking.netlify.app/
 
 ## ✨ Features
+- **Admin Capabilities**: First registered user automatically becomes admin
 
 ### 🎯 Core Features
 - **User Authentication**: Secure registration and login with JWT tokens
@@ -14,7 +15,6 @@ Preview (Frontend only): https://real3dneventbooking.netlify.app/
 - **Search & Filter**: Find events by category, date, or keyword search
 - **Responsive Design**: Beautiful, mobile-first UI that works on all devices
 - **User Dashboard**: Personalized dashboard with event and booking statistics
-- **Admin Capabilities**: First registered user automatically becomes admin
 
 ### 🎨 UI/UX Features
 - Modern gradient and glass morphism design
@@ -31,59 +31,12 @@ Preview (Frontend only): https://real3dneventbooking.netlify.app/
 - File upload validation
 - CORS protection
 - Input sanitization
-
-## 🚀 Tech Stack
-
-### Frontend
-- **React 18** - UI Library
-- **Vite** - Build Tool
-- **Tailwind CSS** - Styling
-- **React Router DOM** - Routing
-- **Axios** - HTTP Client
-- **React Hot Toast** - Notifications
-- **React Icons** - Icon Library
-- **date-fns** - Date Formatting
-
-### Backend
-- **Flask** - Web Framework
-- **Flask-SQLAlchemy** - ORM
-- **Flask-CORS** - Cross-Origin Support
-- **Flask-Bcrypt** - Password Hashing
-- **Flask-JWT-Extended** - JWT Authentication
-- **Pillow** - Image Processing
-
-### Database
-- **SQLite** - Development Database
-- **SQLAlchemy** - Database ORM
-
-## 📸 Screenshots
-
-### Home Page
-![Home Page](https://via.placeholder.com/800x400/6366f1/ffffff?text=Home+Page)
-
-### Events Page
-![Events Page](https://via.placeholder.com/800x400/8b5cf6/ffffff?text=Events+Page)
-
-### Dashboard
-![Dashboard](https://via.placeholder.com/800x400/ec4899/ffffff?text=Dashboard)
-
-### Create Event
-![Create Event](https://via.placeholder.com/800x400/f59e0b/ffffff?text=Create+Event)
-
-## 📋 Prerequisites
-
-Before you begin, ensure you have installed:
-- **Python 3.8+** ([Download](https://www.python.org/downloads/))
-- **Node.js 16+** ([Download](https://nodejs.org/))
-- **npm** or **yarn** (comes with Node.js)
-- **Git** (optional, for cloning)
-
 ## 🛠️ Installation & Setup
 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/event-booking-platform.git
+git clone https://github.com/Real3dn/EventBookingSystem.git
 cd event-booking-platform
 ```
 
@@ -127,7 +80,6 @@ JWT_SECRET_KEY=your-jwt-secret-key-change-this
 EOL
 ```
 
-> ⚠️ **Important**: Change the secret keys in production! Use strong, random strings.
 
 #### Initialize the database and create admin user:
 ```bash
@@ -168,6 +120,40 @@ The frontend will be running at: **http://localhost:5173**
 ### 4. Access the Application
 
 Open your browser and go to: **http://localhost:5173**
+
+## 🚀 Tech Stack
+
+### Frontend
+- **React 18** - UI Library
+- **Vite** - Build Tool
+- **Tailwind CSS** - Styling
+- **React Router DOM** - Routing
+- **Axios** - HTTP Client
+- **React Hot Toast** - Notifications
+- **React Icons** - Icon Library
+- **date-fns** - Date Formatting
+
+### Backend
+- **Flask** - Web Framework
+- **Flask-SQLAlchemy** - ORM
+- **Flask-CORS** - Cross-Origin Support
+- **Flask-Bcrypt** - Password Hashing
+- **Flask-JWT-Extended** - JWT Authentication
+- **Pillow** - Image Processing
+
+### Database
+- **SQLite** - Development Database
+- **SQLAlchemy** - Database ORM
+
+
+## 📋 Prerequisites
+
+Before you begin, ensure you have installed:
+- **Python 3.8+** ([Download](https://www.python.org/downloads/))
+- **Node.js 16+** ([Download](https://nodejs.org/))
+- **npm** or **yarn** (comes with Node.js)
+- **Git** (optional, for cloning)
+
 
 ## 👤 Creating an Admin User
 
